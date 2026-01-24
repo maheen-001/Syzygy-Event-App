@@ -1,0 +1,120 @@
+plugins {
+    alias(libs.plugins.android.application)
+
+    // For Dokka docs generation (modern Javadoc alternative)
+    id("org.jetbrains.dokka") version "1.9.20"
+
+    // For Firebase
+    id("com.google.gms.google-services")
+}
+
+// Dokka docs generation configuration
+tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>().configureEach {
+    outputDirectory.set(file("${rootProject.projectDir}/doc/javadoc"))
+
+    dokkaSourceSets.register("androidMain") {
+        displayName.set("Android App")
+        includeNonPublic.set(true)
+        reportUndocumented.set(true)
+        skipDeprecated.set(false)
+
+        // Source our application code
+        sourceRoots.from(file("src/main/java"))
+
+        // Avoid documenting Android internal packages
+        perPackageOption {
+            matchingRegex.set("android\\..*")
+            suppress.set(true)
+        }
+
+        // Avoid documenting Java internal packages
+        perPackageOption {
+            matchingRegex.set("java\\.lang")
+            suppress.set(true)
+        }
+    }
+}
+
+android {
+    namespace = "com.example.syzygy_eventapp"
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "com.example.syzygy_eventapp"
+        minSdk = 24
+        targetSdk = 36
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+
+    buildFeatures {
+        dataBinding = true
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    buildFeatures {
+        viewBinding = true
+    }
+}
+
+dependencies {
+
+    implementation(libs.appcompat)
+    implementation(libs.material)
+    implementation(libs.activity)
+    implementation(libs.constraintlayout)
+    implementation(libs.ext.junit)
+    implementation(libs.firebase.common)
+    implementation(libs.firebase.functions)
+
+    // CameraX, ML, and Guava dependencies for QR Scan Fragment
+    implementation("androidx.camera:camera-core:1.3.0")
+    implementation("androidx.camera:camera-camera2:1.3.0")
+    implementation("androidx.camera:camera-lifecycle:1.3.0")
+    implementation("androidx.camera:camera-view:1.3.0")
+    implementation("androidx.camera:camera-extensions:1.3.0")
+    implementation("com.google.guava:guava:31.1-android")
+    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+    implementation("com.squareup.picasso:picasso:2.8")
+
+    // QRGenerate Fragment
+    implementation("com.google.zxing:core:3.5.1")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+
+    // Map
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
+    implementation ("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("org.osmdroid:osmdroid-android:6.1.16")
+
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.0.1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.0.1")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    testImplementation("org.robolectric:robolectric:4.11.1")
+
+    // Import the Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:34.4.0"))
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-messaging:25.0.1")
+}
