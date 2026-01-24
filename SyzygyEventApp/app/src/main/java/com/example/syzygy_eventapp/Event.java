@@ -1,0 +1,361 @@
+package com.example.syzygy_eventapp;
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
+
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.Filter;
+import com.google.firebase.firestore.GeoPoint;
+
+import java.sql.Time;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Event (model)
+ * <p>
+ * Responsibilities:
+ * - Store name, description, and organizer info
+ * - Store event location and whether geolocation is required
+ * - Store event poster (as URL)
+ * - Store waiting list entrants
+ * - Store registration period (start/end)
+ * - Store limits such as max waiting list size and max attendees
+ * - Store QR code data (used by QR generator and scanner)
+ * - Track timestamps for creation and update
+ * <p>
+ * Collaborators:
+ * - Invitation (for invites to this event)
+ * - Entrant (for users on the waiting list)
+ * - Organizer
+ */
+public class Event {
+    enum Status {
+        Unknown,
+        Open,
+        DrawnEarly,
+        RegistrationOver,
+        EventOver,
+        Waitlisted,
+        Pending,
+        Accepted,
+        Declined,
+    }
+
+    // --- Basic Info ---
+    private String eventID;
+    private String name;
+    private String description;
+    private String organizerID;
+
+    // --- Time ---
+    private Timestamp eventTime;
+
+    // --- Location ---
+    private String locationName;          // e.g., "10230 Jasper Ave, Edmonton, AB"
+    private GeoPoint locationCoordinates; // Firestore-compatible coordinates
+    private boolean geolocationRequired;  // Whether location is required for this event
+
+    // --- Poster / Media ---
+    private String posterUrl;             // Stored in Firebase Storage, referenced by URL
+
+    // --- Waiting List ---
+    private List<String> waitingList = new ArrayList<>();     // List of user IDs in waiting list
+    private Integer maxWaitingList;       // null or 0 = unlimited
+
+    // --- Invites list ---
+    private List<String> invites = new ArrayList<>();
+
+    // --- Registration Period ---
+    private Timestamp registrationStart;
+    private Timestamp registrationEnd;
+
+    // --- Lottery / Capacity ---
+    private Integer maxAttendees;         // Max entrants selected from lottery
+    private boolean lotteryComplete;      // True when lottery is done
+
+    // --- Metadata ---
+    private Timestamp createdAt;
+    private Timestamp updatedAt;
+
+    // --- Required empty constructor for Firestore ---
+    public Event() {
+    }
+
+    // --- Full constructor (optional, for easier testing / creation) ---
+    public Event(String eventID, String name, String description, String organizerID, Timestamp eventTime,
+                 String locationName, GeoPoint locationCoordinates, boolean geolocationRequired,
+                 String posterUrl, List<String> waitingList, List<String> invites, Integer maxWaitingList,
+                 Timestamp registrationStart, Timestamp registrationEnd,
+                 Integer maxAttendees, boolean lotteryComplete,
+                 Timestamp createdAt, Timestamp updatedAt) {
+        this.eventID = eventID;
+        this.name = name;
+        this.description = description;
+        this.organizerID = organizerID;
+        this.eventTime = eventTime;
+        this.locationName = locationName;
+        this.locationCoordinates = locationCoordinates;
+        this.geolocationRequired = geolocationRequired;
+        this.posterUrl = posterUrl;
+        this.waitingList = waitingList;
+        this.invites = invites;
+        this.maxWaitingList = maxWaitingList;
+        this.registrationStart = registrationStart;
+        this.registrationEnd = registrationEnd;
+        this.maxAttendees = maxAttendees;
+        this.lotteryComplete = lotteryComplete;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
+    // --- Getters and Setters ---
+
+    public Task<Status> calculateRelativeStatus(String userId) {
+        Status absoluteStatus = calculateAbsoluteStatus();
+        if (absoluteStatus == Status.EventOver) {
+            return Tasks.forResult(absoluteStatus);
+        }
+
+        if (waitingList.contains(userId)) {
+            return Tasks.forResult(Status.Waitlisted);
+        }
+
+        Filter filter = Filter.and(
+                Filter.equalTo("recipientID", userId),
+                Filter.equalTo("event", eventID));
+        return InvitationController.getInstance().getInvites(filter)
+                .continueWithTask((task) -> {
+                    if (!task.isSuccessful()) {
+                        return Tasks.forResult(Status.Unknown);
+                    }
+
+                    List<Invitation> invites = task.getResult();
+
+                    // remove cancelled invites
+                    List<Invitation> filteredInvites = invites.stream()
+                            .filter(invite -> !invite.getCancelled())
+                            .sorted(Comparator.comparing(Invitation::getResponseTime))
+                            .collect(Collectors.toList());
+
+                    if (filteredInvites.isEmpty()) {
+                        return Tasks.forResult(absoluteStatus);
+                    }
+
+                    // remove cancelled invites
+                    Invitation invite = filteredInvites.get(filteredInvites.size() - 1);
+
+                    if (invite.hasResponse()) {
+                        if (invite.getAccepted()) {
+                            return Tasks.forResult(Status.Accepted);
+                        } else {
+                            return Tasks.forResult(Status.Declined);
+                        }
+                    } else {
+                        return Tasks.forResult(Status.Pending);
+                    }
+                });
+    }
+
+    public Status calculateAbsoluteStatus() {
+        if (isOpen()) {
+            if (lotteryComplete) {
+                return Status.DrawnEarly;
+            } else {
+                return Status.Open;
+            }
+        } else {
+            if (getEventTime().toDate().before(new Date())) {
+                return Status.EventOver;
+            } else {
+                return Status.RegistrationOver;
+            }
+        }
+    }
+
+    public String getEventID() {
+        return eventID;
+    }
+
+    public void setEventID(String eventID) {
+        this.eventID = eventID;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getOrganizerID() {
+        return organizerID;
+    }
+
+    public void setOrganizerID(String organizerID) {
+        this.organizerID = organizerID;
+    }
+
+    public Timestamp getEventTime() {
+        if (eventTime == null) {
+            return registrationEnd;
+        } else {
+            return eventTime;
+        }
+    }
+
+    public void setEventTime(Timestamp eventTime) {
+        this.eventTime = eventTime;
+    }
+
+    public String getLocationName() {
+        return locationName;
+    }
+
+    public void setLocationName(String locationName) {
+        this.locationName = locationName;
+    }
+
+    public GeoPoint getLocationCoordinates() {
+        return locationCoordinates;
+    }
+
+    public void setLocationCoordinates(GeoPoint locationCoordinates) {
+        this.locationCoordinates = locationCoordinates;
+    }
+
+    public boolean isGeolocationRequired() {
+        return geolocationRequired;
+    }
+
+    public void setGeolocationRequired(boolean geolocationRequired) {
+        this.geolocationRequired = geolocationRequired;
+    }
+
+    public String getPosterUrl() {
+        return posterUrl;
+    }
+
+    public void setPosterUrl(String posterUrl) {
+        this.posterUrl = posterUrl;
+    }
+
+    public Bitmap generatePosterBitmap() {
+        try {
+            byte[] decodedBytes = Base64.decode(posterUrl, Base64.DEFAULT);
+            return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public int getWaitingSize() {
+        if (waitingList == null)
+            return 0;
+        return waitingList.size();
+    }
+
+    public List<String> getWaitingList() {
+        return waitingList;
+    }
+
+    public void setWaitingList(List<String> waitingList) {
+        this.waitingList = waitingList;
+    }
+
+    public List<String> getInvites() {
+        return invites;
+    }
+
+    public void setInvites(List<String> invites) {
+        this.invites = invites;
+    }
+
+    public Integer getMaxWaitingList() {
+        return maxWaitingList;
+    }
+
+    public void setMaxWaitingList(Integer maxWaitingList) {
+        this.maxWaitingList = maxWaitingList;
+    }
+
+    public Timestamp getRegistrationStart() {
+        return registrationStart;
+    }
+
+    public void setRegistrationStart(Timestamp registrationStart) {
+        this.registrationStart = registrationStart;
+    }
+
+    public Timestamp getRegistrationEnd() {
+        return registrationEnd;
+    }
+
+    public void setRegistrationEnd(Timestamp registrationEnd) {
+        this.registrationEnd = registrationEnd;
+    }
+
+    public Integer getMaxAttendees() {
+        return maxAttendees;
+    }
+
+    public void setMaxAttendees(Integer maxAttendees) {
+        this.maxAttendees = maxAttendees;
+    }
+
+    public boolean isLotteryComplete() {
+        return lotteryComplete;
+    }
+
+    public void setLotteryComplete(boolean lotteryComplete) {
+        this.lotteryComplete = lotteryComplete;
+    }
+
+    public boolean isOpen() {
+        if (registrationEnd == null) {
+            return false; // missing important info, false to be safe
+        }
+
+        Date now = new Date();
+        if (!registrationEnd.toDate().after(now)) {
+            return false; // event is closed
+        }
+
+        if (registrationStart == null) {
+            return true; // eh good enough
+        }
+
+        return registrationStart.toDate().before(now);
+    }
+
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Timestamp createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Timestamp getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Timestamp updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+}

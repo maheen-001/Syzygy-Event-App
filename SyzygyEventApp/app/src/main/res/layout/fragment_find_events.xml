@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="12dp"
+    tools:layout_editor_absoluteX="0dp"
+    tools:layout_editor_absoluteY="12dp">
+
+    <!--  use resource file to change num  for events found-->
+    <LinearLayout
+        android:id="@+id/searchLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="45dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/field_box_background"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.437"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <EditText
+            android:id="@+id/searchEvents"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:hint="Search events..."
+            android:padding="8dp"/>
+
+        <Button
+            android:id="@+id/filterButton"
+            android:layout_width="86sp"
+            android:layout_height="38dp"
+            android:backgroundTint="@color/grey"
+            android:layout_marginLeft="2dp"
+            android:layout_marginRight="4dp"
+
+            android:text="Filter"
+            android:textColor="@color/button_text"/>
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/open_qr_scan_button"
+        android:layout_width="fill_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="8dp"
+        android:drawableLeft="@drawable/qr_code"
+        android:drawablePadding="8dp"
+        android:gravity="center"
+        android:text="Scan QR Code"
+        android:textColor="@color/button_text"
+        android:drawableTint="@color/button_text"
+        android:backgroundTint="?android:attr/textColorLink"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.482"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/searchLayout" />
+
+
+    <com.example.syzygy_eventapp.EventSummaryListView
+        android:id="@+id/event_summary_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/open_qr_scan_button"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

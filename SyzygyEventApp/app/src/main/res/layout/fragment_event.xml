@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Event Name -->
+        <TextView
+            android:id="@+id/event_name_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Event Name"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="12dp"
+            android:background="?android:attr/listDivider" />
+
+
+        <!-- Event Description -->
+        <TextView
+            android:id="@+id/event_description_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="Event description goes here..."
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="16sp" />
+
+        <!-- Location Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/field_box_background"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/location_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Location"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/open_map_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/button_text"
+                android:drawableTint="@color/button_text"
+                android:backgroundTint="?android:attr/textColorLink"
+                android:text="Open Map"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- Waiting List Count -->
+        <TextView
+            android:id="@+id/waiting_list_count_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Waiting List: 0 entrants"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <!-- Waiting List Limit Info -->
+        <TextView
+            android:id="@+id/waiting_list_limit_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Waiting List Limit: 100"
+            android:textColor="?attr/colorSecondary"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/poster_image"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/field_box_background"
+            android:src="@drawable/image_placeholder"
+            android:visibility="visible" />
+
+        <!-- Max Attendees (Lottery Criteria) -->
+        <TextView
+            android:id="@+id/max_attendees_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Maximum Attendees: 50"
+            android:textColor="?attr/colorSecondary"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <!-- Registration Period -->
+        <TextView
+            android:id="@+id/registration_period_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="Registration Period"
+            android:textColor="?attr/colorSecondary"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <!-- Join Waiting List Button -->
+        <Button
+            android:id="@+id/join_waiting_list_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:backgroundTint="?android:attr/textColorLink"
+            android:text="Join Waiting List"
+            android:visibility="visible"
+            android:textColor="@color/button_text"/>
+
+        <!-- Leave Waiting List Button -->
+        <Button
+            android:id="@+id/leave_waiting_list_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:backgroundTint="@color/red"
+            android:text="Leave Waiting List"
+            android:visibility="visible"
+            android:textColor="@color/button_text"/>
+
+        <!-- Cancel Attendance Button -->
+        <Button
+            android:id="@+id/cancel_attendance_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cancel Attendance"
+            android:visibility="gone" />
+
+    </LinearLayout>
+</ScrollView>
